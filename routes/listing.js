@@ -32,18 +32,19 @@ router.get("/new", (req, res) => {
 
 //Show Route 
 router.get("/:id", wrapAsync(async (req, res) => {
-    try {
+   // try {
         let { id } = req.params;
         const listing = await Listing.findById(id).populate("reviews");
         if (!listing) {
             req.flash("error", "Listing not Exist!");
+            res.redirect("/listings");
           //  return res.status(404).send("Listing not found");
         }
         res.render("listings/show", { listing });
-    } catch (err) {
-        res.status(500).send("Server error");
+   // } catch (err) {
+    //    res.status(500).send("Server error");
     }
-}));
+));
 
 //Create Route 
 router .post("/",  validateListing, wrapAsync(async (req, res, next) => {
@@ -63,6 +64,11 @@ router .post("/",  validateListing, wrapAsync(async (req, res, next) => {
 router.get("/:id/edit", wrapAsync(async (req, res) => {
     let { id } = req.params;
     const listing = await Listing.findById(id);
+    if (!listing) {
+        req.flash("error", "Listing not Exist!");
+        res.redirect("/listings");
+      //  return res.status(404).send("Listing not found");
+    }
     req.flash("success", "New Listing Edited!");
     res.render("listings/edit.ejs", { listing });
 }));
