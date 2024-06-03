@@ -59,7 +59,7 @@ text-decoration: underline;
 
         }
         /*Cards*/
-        .card{
+        .listing-card{
             border: none !important;
             margin-bottom: 2rem;
         }
@@ -111,6 +111,7 @@ text-decoration: underline;
 <body>
     <%- include("../includes/navbar.ejs") %>
     <div class="container">
+        <%- include("../includes/flash.ejs") %>
         <%- body %>
     </div>
     <%- include("../includes/footer.ejs") %>
