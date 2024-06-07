@@ -1,53 +1,16 @@
 const express = require("express");
 const router = express.Router({mergeParams: true});
 const wrapAsync = require("../utils/wrapAsync.js");
-const ExpressError = require("../utils/ExpressError.js");
-const { reviewSchema } = require("../schema.js");
 const Review = require("../models/review.js");
 const Listing = require("../models/listing.js");
-
-
-//Validate Review Function
-const validateReview= (req, res, next) =>{
-    let {error} = reviewSchema.validate(req.body);
-    
-    if (error) {
-        let errMsg = error.details.map((el) => el.message).join(",");
-        throw new ExpressError(400, errMsg);
-    }else{
-        next();
-    }
-}; 
-
+const {validateReview, isLoggedIn, isReviewAuthor } = require("../middleware.js");
+const reviewController = require("../controllers/reviews.js");
 //Reviews 
 //Post Route 
-router.post("/", validateReview,wrapAsync(async (req, res) => {
-    try {
-        let listing = await Listing.findById(req.params.id);
-        if (!listing) {
-            return res.status(404).send("Listing not found");
-        }
-        let newReview = new Review(req.body.review);
-        listing.reviews.push(newReview);
-        await newReview.save();
-        await listing.save();
-        console.log("New Review Saved");
-        req.flash("success", "New Review Created!");
-        res.redirect(`/listings/${listing._id}`);
-    } catch (e) {
-        console.error(e);
-        res.status(500).send("Internal Server Error");
-    }
-   
-}));
+router.post("/",isLoggedIn, validateReview,wrapAsync(reviewController.createReview));
 
 // Delete Review Route 
-router.delete("/:reviewId", wrapAsync(async(req,res)=>{
-    let{id, reviewId} = req.params;
-    await Listing.findByIdAndUpdate(id, {$pull: {reviews: reviewId}});
-    await Review.findByIdAndUpdate(reviewId);
-    req.flash("success", "New Listing Deleted!");
-    res.redirect(`/listings/${id}`);
-}));
+router.delete("/:reviewId",isLoggedIn,isReviewAuthor,
+ wrapAsync(reviewController.deleteReview));
 
 module.exports = router;
