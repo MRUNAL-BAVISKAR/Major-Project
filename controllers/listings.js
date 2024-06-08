@@ -1,4 +1,5 @@
 const Listing = require("../models/listing");
+const { listingSchema } = require('../schema.js')
 
 module.exports.index = async (req, res) => {
     const allListings = await Listing.find({});
@@ -12,13 +13,13 @@ module.exports.renderNewForm = (req, res) => {
 module.exports.showListings = async (req, res) => {
     let { id } = req.params;
     const listing = await Listing.findById(id)
-    .populate({
-        path:"reviews",
-    populate:{
-        path: "author",
-    }
-    })
-    .populate("owner");
+        .populate({
+            path: "reviews",
+            populate: {
+                path: "author",
+            }
+        })
+        .populate("owner");
     if (!listing) {
         req.flash("error", "Listing not Exist!");
         res.redirect("/listings");
@@ -29,7 +30,7 @@ module.exports.showListings = async (req, res) => {
 
 module.exports.createListing = async (req, res, next) => {
     let url = req.file.path;
-    let filename = req.file.filename;    
+    let filename = req.file.filename;
     let result = listingSchema.validate(req.body);
     console.log(result);
     if (result.error) {
@@ -37,7 +38,7 @@ module.exports.createListing = async (req, res, next) => {
     }
     const newListing = new Listing(req.body.listing);
     newListing.owner = req.user._id;
-    newListing.image = {url,filename};
+    newListing.image = { url, filename };
     await newListing.save();
     req.flash("success", "New Listing Created!");
     res.redirect("/listings");
@@ -49,7 +50,7 @@ module.exports.renderEditForm = async (req, res) => {
     if (!listing) {
         req.flash("error", "Listing not Exist!");
         res.redirect("/listings");
-      //  return res.status(404).send("Listing not found");
+        //  return res.status(404).send("Listing not found");
     }
     req.flash("success", "New Listing Edited!");
     res.render("listings/edit.ejs", { listing });
@@ -57,7 +58,13 @@ module.exports.renderEditForm = async (req, res) => {
 
 module.exports.UpdateForm = async (req, res) => {
     let { id } = req.params;
-    await Listing.findByIdAndUpdate(id, { ...req.body.listing });
+    let listing = await Listing.findByIdAndUpdate(id, { ...req.body.listing });
+    if (typeof req.file !== "undefined") {
+        let url = req.file.path;
+        let filename = req.file.filename;
+        listing.image = { url, filename };
+        await listing.save();
+    }
     req.flash("success", "New Listing Updated!");
     res.redirect(`/listings/${id}`);
 };
